@@ -10,22 +10,18 @@ namespace FlappyBirdOOP
 {
     public partial class Form1 : Form
     {
-        // OOP Aggregation: Entity objects
         private Bird playerBird;
         private Ground gameGround;
         private Background background;
         private List<Pipe> pipes;
 
-        // Game Logic Variables
         private System.Windows.Forms.Timer gameTimer;
         private int score = 0;
         private Random randomGenerator;
 
-        // State Management
         private bool isGameOver = false;
         private bool isGameStarted = false;
 
-        // Visual UI Variables
         private PictureBox readyUI;
         private PictureBox gameoverUI;
         private Image[] numberSprites;
@@ -49,11 +45,18 @@ namespace FlappyBirdOOP
             // 1. Load Base Images
             Image bgImage = Image.FromFile("Assets/sprites/background-day.png");
             Image groundImage = Image.FromFile("Assets/sprites/base.png");
-            Image birdImage = Image.FromFile("Assets/sprites/yellowbird-midflap.png");
             Image pipeImage = Image.FromFile("Assets/sprites/pipe-green.png");
 
             Image topPipeImage = (Image)pipeImage.Clone();
             topPipeImage.RotateFlip(RotateFlipType.Rotate180FlipX);
+
+            // --- SPRITE ANIMATION LOAD ---
+            // Load Bird Animation Frames (Mid -> Down -> Mid -> Up for smooth cycle)
+            Image[] birdFrames = new Image[4];
+            birdFrames[0] = Image.FromFile("Assets/sprites/yellowbird-midflap.png");
+            birdFrames[1] = Image.FromFile("Assets/sprites/yellowbird-downflap.png");
+            birdFrames[2] = Image.FromFile("Assets/sprites/yellowbird-midflap.png");
+            birdFrames[3] = Image.FromFile("Assets/sprites/yellowbird-upflap.png");
 
             // 2. Load Number Sprites for the Score (0 to 9)
             numberSprites = new Image[10];
@@ -63,21 +66,18 @@ namespace FlappyBirdOOP
             }
             scoreDigits = new List<PictureBox>();
 
-            // 3. Instantiate Game Objects
+            // 3. Instantiate Game Objects (Pass the birdFrames array to the Bird)
             background = new Background(0, 0, 400, 600, bgImage);
             gameGround = new Ground(0, 500, 800, 100, groundImage);
-            playerBird = new Bird(100, 200, 34, 24, birdImage);
+            playerBird = new Bird(100, 200, 34, 24, birdFrames);
 
             pipes = new List<Pipe>();
             pipes.Add(new Pipe(400, 300, 52, 320, pipeImage));
             pipes.Add(new Pipe(400, -170, 52, 320, topPipeImage));
 
-            // 4. UNIFIED RENDERING LAYER (The Fix!)
-            // Add background to the form first
+            // 4. UNIFIED RENDERING LAYER
             this.Controls.Add(background.Sprite);
 
-            // Add ALL other entities to the BACKGROUND, not the form. 
-            // This ensures perfect transparency and Z-Order stacking.
             background.Sprite.Controls.Add(gameGround.Sprite);
             background.Sprite.Controls.Add(playerBird.Sprite);
 
@@ -105,7 +105,6 @@ namespace FlappyBirdOOP
             };
             background.Sprite.Controls.Add(gameoverUI);
 
-            // Center the UI elements on screen
             readyUI.Left = (this.ClientSize.Width - readyUI.Width) / 2;
             readyUI.Top = (this.ClientSize.Height - readyUI.Height) / 2;
 
@@ -113,10 +112,9 @@ namespace FlappyBirdOOP
             gameoverUI.Top = (this.ClientSize.Height - gameoverUI.Height) / 2;
 
             // 6. PERFECT Z-ORDER STACKING
-            // The last one called is on the top of the screen.
-            gameGround.Sprite.BringToFront(); // Covers bottom of pipes
-            playerBird.Sprite.BringToFront(); // Above ground
-            readyUI.BringToFront();           // UI is king, always on top!
+            gameGround.Sprite.BringToFront();
+            playerBird.Sprite.BringToFront();
+            readyUI.BringToFront();
 
             // 7. Setup Inputs and Timer
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
@@ -139,7 +137,6 @@ namespace FlappyBirdOOP
                     SizeMode = PictureBoxSizeMode.AutoSize,
                     BackColor = Color.Transparent
                 };
-                // Add new digits to the background layer
                 background.Sprite.Controls.Add(pb);
                 scoreDigits.Add(pb);
             }
@@ -162,10 +159,7 @@ namespace FlappyBirdOOP
             {
                 scoreDigits[i].Location = new Point(currentX, 50);
                 scoreDigits[i].Visible = true;
-
-                // Keep digits on top of everything!
                 scoreDigits[i].BringToFront();
-
                 currentX += scoreDigits[i].Width;
             }
         }
@@ -182,7 +176,6 @@ namespace FlappyBirdOOP
                 pipe.Update();
             }
 
-            // SCORING
             if (pipes[0].X + pipes[0].Width < playerBird.X && !pipes[0].IsScored)
             {
                 score++;
@@ -190,7 +183,6 @@ namespace FlappyBirdOOP
                 pipes[0].IsScored = true;
             }
 
-            // RECYCLING
             if (pipes[0].X < -100)
             {
                 int pipeGap = 150;
@@ -229,8 +221,6 @@ namespace FlappyBirdOOP
 
             readyUI.Visible = false;
             gameoverUI.Visible = true;
-
-            // Bring Game Over visual to the very front
             gameoverUI.BringToFront();
         }
 

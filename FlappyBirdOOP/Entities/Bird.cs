@@ -2,45 +2,58 @@
 
 namespace FlappyBirdOOP.Entities
 {
-    // Inheritance: Bird "is a" GameEntity. 
-    // In C#, we use ':' instead of the 'extends' keyword used in Java.
     public class Bird : GameEntity
     {
-        // Encapsulation: Bird-specific physics variables.
-        // We keep them private because nothing outside needs to change gravity directly.
-        private int gravity = 2;     // Pulls the bird down (increases Y)
-        private int velocity = 0;    // Current vertical speed
-        private int lift = -15;      // Upward force when flapping (negative because Y=0 is at the top)
+        // Physics variables
+        private int gravity = 2;
+        private int velocity = 0;
+        private int jumpStrength = -15;
 
-        // Constructor
-        // 'base' is C#'s equivalent to 'super' in Java. It calls the parent (GameEntity) constructor.
-        public Bird(int x, int y, int width, int height, Image image)
-            : base(x, y, width, height, image)
+        // --- ANIMATION VARIABLES ---
+        private Image[] frames;
+        private int currentFrame = 0;
+        private int animationCounter = 0;
+        private int animationSpeed = 5; // Change wing frame every 5 game ticks (100ms) for smooth flapping
+
+        // Constructor now accepts an array of images instead of just one
+        public Bird(int x, int y, int width, int height, Image[] birdFrames)
+            : base(x, y, width, height, birdFrames[0]) // Send the first frame to the base GameEntity
         {
+            frames = birdFrames;
         }
 
-        // Polymorphism: Overriding the base Update method
         public override void Update()
         {
-            // 1. Apply gravity to velocity (accelerate downwards)
+            // 1. Physics Logic
             velocity += gravity;
-
-            // 2. Apply velocity to the Y position
             Y += velocity;
 
-            // 3. Call the parent class's Update method to actually move the PictureBox on the screen
-            // Similar to super.Update() in Java.
+            // 2. Sprite Animation Logic
+            animationCounter++;
+            if (animationCounter >= animationSpeed)
+            {
+                animationCounter = 0;
+                currentFrame++;
+
+                // Loop back to the first frame if we reached the end of the array
+                if (currentFrame >= frames.Length)
+                {
+                    currentFrame = 0;
+                }
+
+                // Update the visual representation of the bird
+                Sprite.Image = frames[currentFrame];
+            }
+
+            // Update the underlying PictureBox location
             base.Update();
         }
 
-        // Bird-specific behavior: Jumping
         public void Flap()
         {
-            // When the player presses a key, we override the current downward velocity 
-            // with a sharp upward lift.
-            velocity = lift;
+            velocity = jumpStrength;
         }
-        // Encapsulation: The Form doesn't know about 'velocity', it just tells the bird to reset its physics.
+
         public void ResetPhysics()
         {
             velocity = 0;
