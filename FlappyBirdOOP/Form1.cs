@@ -26,6 +26,7 @@ namespace FlappyBirdOOP
 
         // State Management: Tracks whether the game is currently running or over
         private bool isGameOver = false;
+        private bool isGameStarted = false;
 
         public Form1()
         {
@@ -73,12 +74,12 @@ namespace FlappyBirdOOP
             // 5. UI Elements: Score Label
             scoreLabel = new Label
             {
-                Text = "Score: 0",
+                Text = "Press SPACE to Start", 
                 Location = new Point(10, 10),
                 AutoSize = true,
                 Font = new Font("Arial", 24, FontStyle.Bold),
                 ForeColor = Color.Black,
-                BackColor = Color.LightGoldenrodYellow, // Solid background to prevent WinForms transparency bugs
+                BackColor = Color.LightGoldenrodYellow,
                 BorderStyle = BorderStyle.FixedSingle
             };
 
@@ -107,7 +108,7 @@ namespace FlappyBirdOOP
             gameTimer = new System.Windows.Forms.Timer();
             gameTimer.Interval = 20; // 50 FPS
             gameTimer.Tick += new EventHandler(GameLoop);
-            gameTimer.Start();
+            // gameTimer.Start();
         }
 
         // Game Loop: Runs continuously every 20 milliseconds.
@@ -191,8 +192,9 @@ namespace FlappyBirdOOP
         {
             // 1. Reset Game State and UI
             isGameOver = false;
+            isGameStarted = false; // NEW: Go back to the ready/waiting state
             score = 0;
-            scoreLabel.Text = "Score: " + score;
+            scoreLabel.Text = "Press SPACE to Start"; // NEW: Reset the instructional text
 
             // 2. Reset Entity Positions and Physics
             playerBird.SetPosition(100, 200);
@@ -205,20 +207,30 @@ namespace FlappyBirdOOP
             pipes[1].SetPosition(400, -170);
             pipes[1].IsScored = false;
 
-            // 3. Restart the Game Loop
-            gameTimer.Start();
+            // Note: We DO NOT start the gameTimer here anymore. 
+            // It will be started when the user presses SPACE in the KeyDown event.
         }
 
         // Player Input
+        // Player Input
+        // Player Input
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            // Flap only if the game is actively playing
-            if (e.KeyCode == Keys.Space && !isGameOver)
+            // If the game hasn't started yet and the user presses SPACE: START THE GAME
+            if (!isGameStarted && !isGameOver && e.KeyCode == Keys.Space)
+            {
+                isGameStarted = true;
+                scoreLabel.Text = "Score: " + score; // Update UI to show score
+                playerBird.Flap(); // Give the bird an initial jump
+                gameTimer.Start(); // Start the game loop (time starts ticking)!
+            }
+            // If the game is currently playing and the user presses SPACE: JUST FLAP
+            else if (isGameStarted && !isGameOver && e.KeyCode == Keys.Space)
             {
                 playerBird.Flap();
             }
-            // Restart only if the game is over and the user pressed Enter
-            else if (e.KeyCode == Keys.Enter && isGameOver)
+            // If the game is over and the user presses ENTER: RESTART THE GAME
+            else if (isGameOver && e.KeyCode == Keys.Enter)
             {
                 RestartGame();
             }
