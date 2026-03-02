@@ -43,7 +43,7 @@ namespace FlappyBirdOOP
             randomGenerator = new Random();
 
             // 1. Load Base Images
-            Image bgImage = Image.FromFile("Assets/sprites/background-day.png");
+            Image bgImage = Image.FromFile("Assets/sprites/background-night.png");
             Image groundImage = Image.FromFile("Assets/sprites/base.png");
             Image pipeImage = Image.FromFile("Assets/sprites/pipe-green.png");
 
