@@ -21,7 +21,7 @@ namespace FlappyBirdOOP
         // Game Logic Variables
         private System.Windows.Forms.Timer gameTimer;
         private int score = 0;
-        private Label scoreLabel;
+        private Label messageLabel;
         private Random randomGenerator;
 
         // State Management: Tracks whether the game is currently running or over
@@ -71,17 +71,18 @@ namespace FlappyBirdOOP
             pipes.Add(bottomPipe); // pipes[0] is the bottom pipe
             pipes.Add(topPipe);    // pipes[1] is the top pipe
 
-            // 5. UI Elements: Score Label
-            scoreLabel = new Label
+            // 5. UI Elements: Aesthetically pleasing centered UI box
+            messageLabel = new Label
             {
-                Text = "Press SPACE to Start", 
-                Location = new Point(10, 10),
-                AutoSize = true,
-                Font = new Font("Arial", 24, FontStyle.Bold),
-                ForeColor = Color.Black,
-                BackColor = Color.LightGoldenrodYellow,
-                BorderStyle = BorderStyle.FixedSingle
+                AutoSize = true, // FIX: This prevents text from ever being cut off
+                Font = new Font("Segoe UI", 18, FontStyle.Bold), // Modern and cleaner font
+                ForeColor = Color.White,
+                BackColor = Color.DarkSlateBlue, // Solid, elegant color instead of buggy WinForms transparency
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(15), // Gives breathing room between the text and the border
+                TextAlign = ContentAlignment.MiddleCenter
             };
+            this.Controls.Add(messageLabel);
 
             // 6. Add Sprites and UI to the Form's controls
             this.Controls.Add(background.Sprite);
@@ -94,12 +95,14 @@ namespace FlappyBirdOOP
                 pipe.Sprite.BringToFront();
             }
 
-            this.Controls.Add(scoreLabel);
+            this.Controls.Add(messageLabel);
 
             // Ensure correct Z-Order (Rendering order)
             gameGround.Sprite.BringToFront();
             playerBird.Sprite.BringToFront();
-            scoreLabel.BringToFront();
+
+            // Set the initial message using our new helper method
+            ShowCenteredMessage("Ready?\nPress SPACE");
 
             // 7. Setup Input Listener
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
@@ -123,15 +126,11 @@ namespace FlappyBirdOOP
                 pipe.Update();
             }
 
-            // 1. SCORING LOGIC (For immediate updates)
-            // If the right edge of the pipe has passed the left edge of the bird
-            // AND we haven't scored from this pipe yet:
+            // 1. SCORING LOGIC
             if (pipes[0].X + pipes[0].Width < playerBird.X && !pipes[0].IsScored)
             {
                 score++;
-                scoreLabel.Text = "Score: " + score;
-
-                // OOP State Update: Mark as scored to prevent infinite points
+                // messageLabel.Text = "Score: " + score;  --> THIS LINE IS DELETED! 
                 pipes[0].IsScored = true;
             }
 
@@ -180,35 +179,44 @@ namespace FlappyBirdOOP
 
         private void GameOver()
         {
-            // Stop the game loop and update the game state
             gameTimer.Stop();
             isGameOver = true;
 
-            // Update UI to show instructions
-            scoreLabel.Text = "Game Over! Score: " + score + " [Press ENTER]";
+            // Use our helper to show and center the Game Over screen
+            ShowCenteredMessage("Game Over!\nScore: " + score + "\nPress ENTER");
+        }
+
+        // UI Helper: Updates the text, adjusts size automatically, and perfectly centers it
+        private void ShowCenteredMessage(string text)
+        {
+            messageLabel.Text = text;
+
+            // Math to perfectly center the label on the Form
+            messageLabel.Left = (this.ClientSize.Width - messageLabel.Width) / 2;
+            messageLabel.Top = (this.ClientSize.Height - messageLabel.Height) / 2;
+
+            messageLabel.Visible = true;
+            messageLabel.BringToFront(); // Ensure it stays on top of everything
         }
 
         private void RestartGame()
         {
-            // 1. Reset Game State and UI
             isGameOver = false;
-            isGameStarted = false; // NEW: Go back to the ready/waiting state
+            isGameStarted = false;
             score = 0;
-            scoreLabel.Text = "Press SPACE to Start"; // NEW: Reset the instructional text
 
-            // 2. Reset Entity Positions and Physics
+            // Back to the waiting screen
+            ShowCenteredMessage("Ready?\nPress SPACE");
+
+            // Reset Entity Positions and Physics
             playerBird.SetPosition(100, 200);
             playerBird.ResetPhysics();
 
-            // Put pipes back to their starting positions and reset their score states
             pipes[0].SetPosition(400, 300);
             pipes[0].IsScored = false;
 
             pipes[1].SetPosition(400, -170);
             pipes[1].IsScored = false;
-
-            // Note: We DO NOT start the gameTimer here anymore. 
-            // It will be started when the user presses SPACE in the KeyDown event.
         }
 
         // Player Input
@@ -216,13 +224,13 @@ namespace FlappyBirdOOP
         // Player Input
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            // If the game hasn't started yet and the user presses SPACE: START THE GAME
             if (!isGameStarted && !isGameOver && e.KeyCode == Keys.Space)
             {
                 isGameStarted = true;
-                scoreLabel.Text = "Score: " + score; // Update UI to show score
-                playerBird.Flap(); // Give the bird an initial jump
-                gameTimer.Start(); // Start the game loop (time starts ticking)!
+                messageLabel.Visible = false; // HIDE the center message when playing!
+
+                playerBird.Flap();
+                gameTimer.Start();
             }
             // If the game is currently playing and the user presses SPACE: JUST FLAP
             else if (isGameStarted && !isGameOver && e.KeyCode == Keys.Space)
