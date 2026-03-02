@@ -58,19 +58,21 @@ namespace FlappyBirdOOP
             pipes.Add(bottomPipe); // pipes[0] is bottom
             pipes.Add(topPipe);    // pipes[1] is top
 
-            // UI Elements: Score Label
+            // UI Elements: Score Label (UPDATED FOR VISIBILITY)
             scoreLabel = new Label
             {
                 Text = "Score: 0",
                 Location = new Point(10, 10),
-                Size = new Size(150, 40),
+                AutoSize = true, // Let the box resize itself based on the text length
                 Font = new Font("Arial", 24, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = Color.Transparent, // Make background transparent
-                Parent = background.Sprite // Crucial for transparent background on WinForms
+                ForeColor = Color.Black, // Black text stands out against the sky
+                BackColor = Color.LightGoldenrodYellow, // A solid background to prevent WinForms transparency bugs
+                BorderStyle = BorderStyle.FixedSingle // A nice border around our score box
             };
 
-            this.Controls.Add(background.Sprite);
+            // 1. Add the label directly to the Form's control list
+            this.Controls.Add(scoreLabel);
+            this.Controls.Add(background.Sprite); 
             this.Controls.Add(gameGround.Sprite);
             this.Controls.Add(playerBird.Sprite);
 
