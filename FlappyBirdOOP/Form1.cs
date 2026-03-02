@@ -25,7 +25,7 @@ namespace FlappyBirdOOP
         private bool isGameOver = false;
         private bool isGameStarted = false;
 
-        // Visual UI Variables (Using Images instead of Text)
+        // Visual UI Variables
         private PictureBox readyUI;
         private PictureBox gameoverUI;
         private Image[] numberSprites;
@@ -72,18 +72,21 @@ namespace FlappyBirdOOP
             pipes.Add(new Pipe(400, 300, 52, 320, pipeImage));
             pipes.Add(new Pipe(400, -170, 52, 320, topPipeImage));
 
-            // 4. Add Game Entities to Form FIRST
+            // 4. UNIFIED RENDERING LAYER (The Fix!)
+            // Add background to the form first
             this.Controls.Add(background.Sprite);
-            this.Controls.Add(gameGround.Sprite);
-            this.Controls.Add(playerBird.Sprite);
+
+            // Add ALL other entities to the BACKGROUND, not the form. 
+            // This ensures perfect transparency and Z-Order stacking.
+            background.Sprite.Controls.Add(gameGround.Sprite);
+            background.Sprite.Controls.Add(playerBird.Sprite);
 
             foreach (Pipe pipe in pipes)
             {
-                this.Controls.Add(pipe.Sprite);
-                pipe.Sprite.BringToFront();
+                background.Sprite.Controls.Add(pipe.Sprite);
             }
 
-            // 5. Setup Visual UI Objects (TRANSPARENCY FIX)
+            // 5. Setup Visual UI Objects
             readyUI = new PictureBox
             {
                 Image = Image.FromFile("Assets/sprites/message.png"),
@@ -91,7 +94,6 @@ namespace FlappyBirdOOP
                 BackColor = Color.Transparent,
                 Visible = true
             };
-            // FIX: Add directly to the background image, NOT the form!
             background.Sprite.Controls.Add(readyUI);
 
             gameoverUI = new PictureBox
@@ -101,7 +103,6 @@ namespace FlappyBirdOOP
                 BackColor = Color.Transparent,
                 Visible = false
             };
-            // FIX: Add directly to the background image, NOT the form!
             background.Sprite.Controls.Add(gameoverUI);
 
             // Center the UI elements on screen
@@ -111,12 +112,13 @@ namespace FlappyBirdOOP
             gameoverUI.Left = (this.ClientSize.Width - gameoverUI.Width) / 2;
             gameoverUI.Top = (this.ClientSize.Height - gameoverUI.Height) / 2;
 
-            // Ensure Z-Order
-            gameGround.Sprite.BringToFront();
-            playerBird.Sprite.BringToFront();
-            readyUI.BringToFront();
+            // 6. PERFECT Z-ORDER STACKING
+            // The last one called is on the top of the screen.
+            gameGround.Sprite.BringToFront(); // Covers bottom of pipes
+            playerBird.Sprite.BringToFront(); // Above ground
+            readyUI.BringToFront();           // UI is king, always on top!
 
-            // 6. Setup Inputs and Timer
+            // 7. Setup Inputs and Timer
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
 
             gameTimer = new System.Windows.Forms.Timer();
@@ -130,7 +132,6 @@ namespace FlappyBirdOOP
         {
             string scoreString = score.ToString();
 
-            // Ensure enough PictureBoxes exist
             while (scoreDigits.Count < scoreString.Length)
             {
                 PictureBox pb = new PictureBox
@@ -138,18 +139,16 @@ namespace FlappyBirdOOP
                     SizeMode = PictureBoxSizeMode.AutoSize,
                     BackColor = Color.Transparent
                 };
-                // FIX: Add directly to the background image, NOT the form!
+                // Add new digits to the background layer
                 background.Sprite.Controls.Add(pb);
                 scoreDigits.Add(pb);
             }
 
-            // Hide unused PictureBoxes
             for (int i = scoreString.Length; i < scoreDigits.Count; i++)
             {
                 scoreDigits[i].Visible = false;
             }
 
-            // Calculate width for centering
             int totalWidth = 0;
             for (int i = 0; i < scoreString.Length; i++)
             {
@@ -158,13 +157,15 @@ namespace FlappyBirdOOP
                 totalWidth += scoreDigits[i].Width;
             }
 
-            // Position and show them
             int currentX = (this.ClientSize.Width - totalWidth) / 2;
             for (int i = 0; i < scoreString.Length; i++)
             {
                 scoreDigits[i].Location = new Point(currentX, 50);
                 scoreDigits[i].Visible = true;
+
+                // Keep digits on top of everything!
                 scoreDigits[i].BringToFront();
+
                 currentX += scoreDigits[i].Width;
             }
         }
@@ -228,6 +229,8 @@ namespace FlappyBirdOOP
 
             readyUI.Visible = false;
             gameoverUI.Visible = true;
+
+            // Bring Game Over visual to the very front
             gameoverUI.BringToFront();
         }
 
