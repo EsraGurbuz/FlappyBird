@@ -1,20 +1,22 @@
-#nullable disable // Relaxing modern C#'s strict null checks for this specific file.
+#nullable disable
 
 using System;
+using System.Collections.Generic; // Added for List data structure
 using System.Drawing;
 using System.Windows.Forms;
-using FlappyBirdOOP.Entities; // Adjust this namespace according to your project name
+using FlappyBirdOOP.Entities;
 
 namespace FlappyBirdOOP
 {
     public partial class Form1 : Form
     {
-        // Aggregation: The Form class "has a" Bird, Ground, and Background (Has-A relationship).
         private Bird playerBird;
         private Ground gameGround;
         private Background background;
 
-        // Explicitly stating that we are using the Windows Forms Timer.
+        // Data Structure: A list to hold multiple pipe objects (Top and Bottom pipes)
+        private List<Pipe> pipes;
+
         private System.Windows.Forms.Timer gameTimer;
 
         public Form1()
@@ -25,73 +27,114 @@ namespace FlappyBirdOOP
 
         private void SetupGame()
         {
-            // 1. Form Settings
             this.Width = 400;
             this.Height = 600;
             this.Text = "Flappy Bird OOP";
-
-            // WinForms Trade-off Solution: Enable DoubleBuffering to prevent screen flickering.
             this.DoubleBuffered = true;
 
-            // 2. Load the Images
-            // IMPORTANT: Ensure "Copy to Output Directory" is set to "Copy if newer" for ALL these images.
+            // 1. Load the Images (Ensure 'Copy if newer' is set!)
             Image bgImage = Image.FromFile("Assets/sprites/background-day.png");
             Image groundImage = Image.FromFile("Assets/sprites/base.png");
             Image birdImage = Image.FromFile("Assets/sprites/yellowbird-midflap.png");
+            Image pipeImage = Image.FromFile("Assets/sprites/pipe-green.png");
 
-            // 3. Instantiate the Game Objects
-            // Background covers the whole screen (Width: 400, Height: 600)
+            // Create a flipped version of the pipe image for the top pipe
+            Image topPipeImage = (Image)pipeImage.Clone();
+            topPipeImage.RotateFlip(RotateFlipType.Rotate180FlipX);
+
+            // 2. Instantiate Base Objects
             background = new Background(0, 0, 400, 600, bgImage);
-
-            // Ground is positioned at the bottom (Y: 500). 
-            // We make it twice as wide (800) to create a seamless scrolling illusion.
             gameGround = new Ground(0, 500, 800, 100, groundImage);
-
-            // Bird starts in the air
             playerBird = new Bird(100, 200, 34, 24, birdImage);
 
-            // 4. Add Sprites to the Form's controls
-            // The order matters in WinForms. The first one added stays at the bottom (Z-Index).
+            // 3. Instantiate Pipes and add them to the list
+            pipes = new List<Pipe>();
+
+            // Bottom Pipe (X: 400, Y: 300)
+            Pipe bottomPipe = new Pipe(400, 300, 52, 320, pipeImage);
+            // Top Pipe (X: 400, Y: -150) -> Positioned higher up
+            Pipe topPipe = new Pipe(400, -150, 52, 320, topPipeImage);
+
+            pipes.Add(bottomPipe);
+            pipes.Add(topPipe);
+
+            // 4. Add Sprites to the Form
             this.Controls.Add(background.Sprite);
             this.Controls.Add(gameGround.Sprite);
             this.Controls.Add(playerBird.Sprite);
 
-            // Ensure the bird and ground are rendered in front of the background
+            // Add pipe sprites to the form
+            foreach (Pipe pipe in pipes)
+            {
+                this.Controls.Add(pipe.Sprite);
+                pipe.Sprite.BringToFront();
+            }
+
             gameGround.Sprite.BringToFront();
             playerBird.Sprite.BringToFront();
 
-            // 5. Setup Input Listener
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
 
-            // 6. Setup the Game Loop
             gameTimer = new System.Windows.Forms.Timer();
-            gameTimer.Interval = 20; // 50 FPS
+            gameTimer.Interval = 20;
             gameTimer.Tick += new EventHandler(GameLoop);
             gameTimer.Start();
         }
 
-        // Game Loop: Runs continuously every 20 milliseconds.
         private void GameLoop(object sender, EventArgs e)
         {
-            // Update the physics and positions of moving entities
+            // 1. Update Entities
             playerBird.Update();
             gameGround.Update();
+
+            foreach (Pipe pipe in pipes)
+            {
+                pipe.Update();
+            }
+
+            // 2. Collision Detection (AABB IntersectsWith method)
+            CheckCollisions();
         }
 
-        // Player Input
+        private void CheckCollisions()
+        {
+            // Check collision with the ground
+            if (playerBird.Sprite.Bounds.IntersectsWith(gameGround.Sprite.Bounds))
+            {
+                GameOver();
+            }
+
+            // Check collision with any of the pipes
+            foreach (Pipe pipe in pipes)
+            {
+                if (playerBird.Sprite.Bounds.IntersectsWith(pipe.Sprite.Bounds))
+                {
+                    GameOver();
+                }
+            }
+
+            // Check if the bird flies too high (off the top of the screen)
+            if (playerBird.Y < -20)
+            {
+                GameOver();
+            }
+        }
+
+        private void GameOver()
+        {
+            // Stop the game loop
+            gameTimer.Stop();
+            MessageBox.Show("Game Over! You hit an obstacle.", "Flappy Bird OOP");
+        }
+
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            // If the pressed key is the Spacebar
             if (e.KeyCode == Keys.Space)
             {
                 playerBird.Flap();
             }
         }
 
-        // Fix for the Visual Studio Designer's expected Form Load method
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // Left empty intentionally, as we handle setup in SetupGame().
-        }
+        private void Form1_Load(object sender, EventArgs e) { }
     }
 }
