@@ -9,8 +9,10 @@ namespace FlappyBirdOOP
 {
     public partial class Form1 : Form
     {
-        // Aggregation: The Form class "has a" Bird object (Has-A relationship).
+        // Aggregation: The Form class "has a" Bird, Ground, and Background (Has-A relationship).
         private Bird playerBird;
+        private Ground gameGround;
+        private Background background;
 
         // Explicitly stating that we are using the Windows Forms Timer.
         private System.Windows.Forms.Timer gameTimer;
@@ -31,34 +33,49 @@ namespace FlappyBirdOOP
             // WinForms Trade-off Solution: Enable DoubleBuffering to prevent screen flickering.
             this.DoubleBuffered = true;
 
-            // 2. Load the Image
-            // IMPORTANT: Ensure "Copy to Output Directory" is set to "Copy if newer" for this image.
+            // 2. Load the Images
+            // IMPORTANT: Ensure "Copy to Output Directory" is set to "Copy if newer" for ALL these images.
+            Image bgImage = Image.FromFile("Assets/sprites/background-day.png");
+            Image groundImage = Image.FromFile("Assets/sprites/base.png");
             Image birdImage = Image.FromFile("Assets/sprites/yellowbird-midflap.png");
 
-            // 3. Instantiate the Bird Object
-            // Creating a bird at X: 100, Y: 200 with dimensions 34x24.
+            // 3. Instantiate the Game Objects
+            // Background covers the whole screen (Width: 400, Height: 600)
+            background = new Background(0, 0, 400, 600, bgImage);
+
+            // Ground is positioned at the bottom (Y: 500). 
+            // We make it twice as wide (800) to create a seamless scrolling illusion.
+            gameGround = new Ground(0, 500, 800, 100, groundImage);
+
+            // Bird starts in the air
             playerBird = new Bird(100, 200, 34, 24, birdImage);
 
-            // 4. Add the Bird's Sprite (PictureBox) to the Form's controls so it appears on screen
+            // 4. Add Sprites to the Form's controls
+            // The order matters in WinForms. The first one added stays at the bottom (Z-Index).
+            this.Controls.Add(background.Sprite);
+            this.Controls.Add(gameGround.Sprite);
             this.Controls.Add(playerBird.Sprite);
 
+            // Ensure the bird and ground are rendered in front of the background
+            gameGround.Sprite.BringToFront();
+            playerBird.Sprite.BringToFront();
+
             // 5. Setup Input Listener
-            // Event-Driven Programming: Trigger the Form1_KeyDown method when a key is pressed.
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
 
             // 6. Setup the Game Loop
             gameTimer = new System.Windows.Forms.Timer();
-            gameTimer.Interval = 20; // 20 milliseconds = 50 Frames Per Second (FPS)
+            gameTimer.Interval = 20; // 50 FPS
             gameTimer.Tick += new EventHandler(GameLoop);
             gameTimer.Start();
         }
 
-        // Game Loop: This method runs continuously every 20 milliseconds.
+        // Game Loop: Runs continuously every 20 milliseconds.
         private void GameLoop(object sender, EventArgs e)
         {
-            // The power of OOP: The Form doesn't know the math of how the bird falls. 
-            // It simply tells the bird to "Update yourself".
+            // Update the physics and positions of moving entities
             playerBird.Update();
+            gameGround.Update();
         }
 
         // Player Input
@@ -67,8 +84,6 @@ namespace FlappyBirdOOP
             // If the pressed key is the Spacebar
             if (e.KeyCode == Keys.Space)
             {
-                // The power of OOP: The Form doesn't know how the jump physics work.
-                // It just tells the bird to "Flap".
                 playerBird.Flap();
             }
         }
