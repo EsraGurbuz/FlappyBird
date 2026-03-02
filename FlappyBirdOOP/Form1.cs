@@ -106,26 +106,32 @@ namespace FlappyBirdOOP
                 pipe.Update();
             }
 
-            // Pipe Recycling and Scoring Logic
-            // If the bottom pipe goes off-screen (X < -100)
+            // 1. SCORING LOGIC (For immediate updates)
+            // If the right edge of the pipe (X + Width) has passed the left edge of the bird (X)
+            // AND we haven't scored from this pipe yet:
+            if (pipes[0].X + pipes[0].Width < playerBird.X && !pipes[0].IsScored)
+            {
+                score++;
+                scoreLabel.Text = "Score: " + score;
+
+                // OOP State Update: We got the score from this pipe, set it to true so that
+                // the game loop (running at 50 FPS) doesn't increment the score repeatedly.
+                pipes[0].IsScored = true;
+            }
+
+            // 2. PIPE RECYCLING LOGIC (When it goes off-screen)
             if (pipes[0].X < -100)
             {
-                // The space between top and bottom pipe where the bird flies
                 int pipeGap = 150;
-
-                // Generate a random Y coordinate for the bottom pipe (between 250 and 450)
                 int newBottomY = randomGenerator.Next(250, 450);
-
-                // Calculate the top pipe's Y coordinate based on the bottom pipe and the gap
                 int newTopY = newBottomY - pipeGap - pipes[1].Height;
 
-                // Move pipes back to the right side of the screen with new Y coordinates
                 pipes[0].SetPosition(400, newBottomY);
                 pipes[1].SetPosition(400, newTopY);
 
-                // Successfully passed a pipe, increase score!
-                score++;
-                scoreLabel.Text = "Score: " + score;
+                // CRUCIAL: When the pipe loops back, to act like a brand new pipe,
+                // we reset its scored state back to false!
+                pipes[0].IsScored = false;
             }
 
             CheckCollisions();

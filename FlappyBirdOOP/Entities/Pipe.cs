@@ -7,6 +7,8 @@ namespace FlappyBirdOOP.Entities
     {
         private int speed = 5;
 
+        public bool IsScored { get; set; } = false;
+
         public Pipe(int x, int y, int width, int height, Image image)
             : base(x, y, width, height, image)
         {
