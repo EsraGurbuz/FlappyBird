@@ -40,5 +40,10 @@ namespace FlappyBirdOOP.Entities
             // with a sharp upward lift.
             velocity = lift;
         }
+        // Encapsulation: The Form doesn't know about 'velocity', it just tells the bird to reset its physics.
+        public void ResetPhysics()
+        {
+            velocity = 0;
+        }
     }
 }
