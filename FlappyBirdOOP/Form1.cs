@@ -25,11 +25,12 @@ namespace FlappyBirdOOP
         private bool isGameOver = false;
         private bool isGameStarted = false;
 
-        // UI Variables
-        private Label messageLabel; // The centered text box
-        private Image[] numberSprites; // Holds images 0 to 9
-        private List<PictureBox> scoreDigits; // Holds the individual digits on screen
-
+        // UI Variables (REVISED)
+        // private Label messageLabel; // REMOVED: No longer using text-based label
+        private PictureBox readyUI; 
+        private PictureBox gameoverUI; 
+        private Image[] numberSprites;
+        private List<PictureBox> scoreDigits;
         public Form1()
         {
             InitializeComponent();
@@ -71,17 +72,48 @@ namespace FlappyBirdOOP
             pipes.Add(new Pipe(400, 300, 52, 320, pipeImage));     // Bottom
             pipes.Add(new Pipe(400, -170, 52, 320, topPipeImage)); // Top
 
-            // 4. Setup Centered Message Label (Aesthetic UI Panel)
-            messageLabel = new Label
+            // 4. Setup Visual UI Objects (REVISED)
+            // Load and configure the Ready/Tutorial visual (message.png)
+            readyUI = new PictureBox
             {
-                AutoSize = true, // Prevents text from clipping
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = Color.DarkSlateBlue, // Elegant solid background
-                BorderStyle = BorderStyle.FixedSingle,
-                Padding = new Padding(15),
-                TextAlign = ContentAlignment.MiddleCenter
+                Image = Image.FromFile("Assets/sprites/message.png"),
+                SizeMode = PictureBoxSizeMode.AutoSize,
+                BackColor = Color.Transparent,
+                Parent = background.Sprite, // Transparency hack
+                Visible = false // Hidden initially
             };
+            this.Controls.Add(readyUI);
+
+            // Load and configure the Game Over visual (gameover.png)
+            gameoverUI = new PictureBox
+            {
+                Image = Image.FromFile("Assets/sprites/gameover.png"),
+                SizeMode = PictureBoxSizeMode.AutoSize,
+                BackColor = Color.Transparent,
+                Parent = background.Sprite, // Transparency hack
+                Visible = false // Hidden initially
+            };
+            this.Controls.Add(gameoverUI);
+
+            // Position both UI elements perfectly in the center of the screen
+            readyUI.Left = (this.ClientSize.Width - readyUI.Width) / 2;
+            readyUI.Top = (this.ClientSize.Height - readyUI.Height) / 2;
+
+            gameoverUI.Left = (this.ClientSize.Width - gameoverUI.Width) / 2;
+            gameoverUI.Top = (this.ClientSize.Height - gameoverUI.Height) / 2;
+
+            // 5. Add controls... (Bu kısım aynı, ama messageLabel ekleme kodunu sil!)
+            // this.Controls.Add(messageLabel); // REMOVED
+
+            // Ensure Z-Order... (BringToFront kodları aynı)
+            gameGround.Sprite.BringToFront();
+            playerBird.Sprite.BringToFront();
+
+            // SET INITIAL STATE (Replaces ShowCenteredMessage)
+            // Show the ready visual when game starts, hide the gameover visual
+            readyUI.Visible = true;
+            readyUI.BringToFront();
+            gameoverUI.Visible = false;
 
             // 5. Add controls to Form
             this.Controls.Add(background.Sprite);
@@ -94,14 +126,14 @@ namespace FlappyBirdOOP
                 pipe.Sprite.BringToFront();
             }
 
-            this.Controls.Add(messageLabel);
+            //this.Controls.Add(messageLabel);
 
             // Ensure Z-Order
             gameGround.Sprite.BringToFront();
             playerBird.Sprite.BringToFront();
 
             // Show initial start message
-            ShowCenteredMessage("Ready?\nPress SPACE");
+            //ShowCenteredMessage("Ready?\nPress SPACE");
 
             // 6. Setup Inputs and Timer
             this.KeyDown += new KeyEventHandler(Form1_KeyDown);
@@ -113,17 +145,6 @@ namespace FlappyBirdOOP
         }
 
         // --- UI HELPER METHODS ---
-
-        private void ShowCenteredMessage(string text)
-        {
-            messageLabel.Text = text;
-            // Center the label dynamically based on its new size
-            messageLabel.Left = (this.ClientSize.Width - messageLabel.Width) / 2;
-            messageLabel.Top = (this.ClientSize.Height - messageLabel.Height) / 2;
-
-            messageLabel.Visible = true;
-            messageLabel.BringToFront();
-        }
 
         private void UpdateScoreDisplay()
         {
@@ -223,11 +244,13 @@ namespace FlappyBirdOOP
             gameTimer.Stop();
             isGameOver = true;
 
-            // Hide the sprite score
+            // Hide sprite score
             foreach (PictureBox pb in scoreDigits) pb.Visible = false;
 
-            // Show Game Over panel
-            ShowCenteredMessage("Game Over\nScore: " + score + "\nPress ENTER");
+            // Show Game Over visual, hide Ready visual
+            readyUI.Visible = false;
+            gameoverUI.Visible = true;
+            gameoverUI.BringToFront();
         }
 
         private void RestartGame()
@@ -236,7 +259,10 @@ namespace FlappyBirdOOP
             isGameStarted = false;
             score = 0;
 
-            ShowCenteredMessage("Ready?\nPress SPACE");
+            // Reset UI back to Ready visual
+            readyUI.Visible = true;
+            readyUI.BringToFront();
+            gameoverUI.Visible = false;
 
             playerBird.SetPosition(100, 200);
             playerBird.ResetPhysics();
@@ -253,8 +279,12 @@ namespace FlappyBirdOOP
             if (!isGameStarted && !isGameOver && e.KeyCode == Keys.Space)
             {
                 isGameStarted = true;
-                messageLabel.Visible = false; // Hide the Ready panel
-                UpdateScoreDisplay(); // Show the '0' sprite score
+
+                // Hide ALL UI visuals when playing
+                readyUI.Visible = false;
+                gameoverUI.Visible = false;
+
+                UpdateScoreDisplay();
                 playerBird.Flap();
                 gameTimer.Start();
             }
