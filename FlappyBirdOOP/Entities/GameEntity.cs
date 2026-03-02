@@ -46,5 +46,13 @@ namespace FlappyBirdOOP.Entities // Adjust this namespace according to your proj
             // Core logic: Update the actual position of the PictureBox on the screen when X and Y change.
             Sprite.Location = new Point(X, Y);
         }
+
+        // Encapsulation: Allow external managers (like the Game Loop) to safely reposition the entity.
+        public void SetPosition(int newX, int newY)
+        {
+            X = newX;
+            Y = newY;
+            Sprite.Location = new Point(X, Y);
+        }
     }
 }
